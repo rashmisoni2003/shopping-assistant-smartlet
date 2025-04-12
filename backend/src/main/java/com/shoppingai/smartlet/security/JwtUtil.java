@@ -10,7 +10,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String jwtSecret = "your-super-secret-key-which-should-be-long";
+    private final String jwtSecret = "just-jack-and-jill";
     private final long jwtExpirationMs = 86400000;
 
     private Key getSigningKey() {
