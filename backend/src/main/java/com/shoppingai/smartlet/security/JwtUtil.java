@@ -4,13 +4,21 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 import com.shoppingai.smartlet.model.User;
+
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    private final String jwtSecret = "just-jack-and-jill";
+    private final String jwtSecret = getSecret();
+
+    private String getSecret() {
+        SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        return key.toString();
+    }
+
     private final long jwtExpirationMs = 86400000;
 
     private Key getSigningKey() {

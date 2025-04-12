@@ -1,13 +1,61 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
+import axios from "axios";
 import avatar from "..//Pooho.png";
 import "..//stars.css";
 
 export default function LoginPage() {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+
+  const navigate = useNavigate(); // for navigation
+
+  const handleLogin = async () => {
+    try {
+      const res = await axios.post("http://localhost:8080/api/auth/login", {
+        email: loginEmail,
+        password: loginPassword,
+      });
+      localStorage.setItem("token", res.data.token);
+      navigate("/Prompt"); // Redirect to UI route
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Login failed", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  };
+
+  const handleSignup = async () => {
+    try {
+      const res = await axios.post("http://localhost:8080/api/auth/signup", {
+        username: signupUsername,
+        email: signupEmail,
+        password: signupPassword,
+      });
+      localStorage.setItem("token", res.data.token);
+      toast.success("Signup successful!", {
+        duration: 3000,
+        position: "top-center",
+      });
+      setIsFlipped(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Signup failed", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] p-6">
+      <Toaster />
       <div className="stars" />
       <div className="twinkling" />
 
@@ -33,6 +81,7 @@ export default function LoginPage() {
         transition={{ duration: 0.8 }}
         style={{ transformStyle: "preserve-3d" }}
       >
+        {/* Login Form */}
         <div
           className="absolute w-full h-full bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl p-8 flex flex-col justify-center items-center"
           style={{ backfaceVisibility: "hidden" }}
@@ -41,14 +90,21 @@ export default function LoginPage() {
           <input
             type="email"
             placeholder="Email"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
             className="w-full p-3 mb-4 rounded bg-white/30 placeholder-white/80 text-white focus:outline-none"
           />
           <input
             type="password"
             placeholder="Password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
             className="w-full p-3 mb-4 rounded bg-white/30 placeholder-white/80 text-white focus:outline-none"
           />
-          <button className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 transition p-3 rounded text-white font-semibold">
+          <button
+            onClick={handleLogin}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 transition p-3 rounded text-white font-semibold"
+          >
             Log In
           </button>
           <button
@@ -59,6 +115,7 @@ export default function LoginPage() {
           </button>
         </div>
 
+        {/* Sign Up Form */}
         <div
           className="absolute w-full h-full bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl p-8 flex flex-col justify-center items-center"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
@@ -67,19 +124,28 @@ export default function LoginPage() {
           <input
             type="text"
             placeholder="Username"
+            value={signupUsername}
+            onChange={(e) => setSignupUsername(e.target.value)}
             className="w-full p-3 mb-4 rounded bg-white/30 placeholder-white/80 text-white focus:outline-none"
           />
           <input
             type="email"
             placeholder="Email"
+            value={signupEmail}
+            onChange={(e) => setSignupEmail(e.target.value)}
             className="w-full p-3 mb-4 rounded bg-white/30 placeholder-white/80 text-white focus:outline-none"
           />
           <input
             type="password"
             placeholder="Password"
+            value={signupPassword}
+            onChange={(e) => setSignupPassword(e.target.value)}
             className="w-full p-3 mb-4 rounded bg-white/30 placeholder-white/80 text-white focus:outline-none"
           />
-          <button className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 transition p-3 rounded text-white font-semibold">
+          <button
+            onClick={handleSignup}
+            className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 transition p-3 rounded text-white font-semibold"
+          >
             Sign Up
           </button>
           <button

@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { PiPaperPlaneRightFill } from "react-icons/pi";
 import { FaSignOutAlt } from "react-icons/fa";
 import avatar from "../Pooho.png";
-import "../stars.css";  // Assuming the CSS file for styles
+import "../stars.css";
+import axios from "axios";
 
 export default function PromptPage() {
   const [prompt, setPrompt] = useState("");
@@ -15,20 +16,53 @@ export default function PromptPage() {
     setImage(URL.createObjectURL(e.target.files[0]));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!prompt.trim() && !image) return;
-
-    setMessages((prev) => [...prev, { type: "user", text: prompt, image }]);
+    const userMessage = { type: "user", text: prompt, image };
+    setMessages((prev) => [...prev, userMessage]);
     setPrompt("");
     setImage(null);
-
-    setTimeout(() => {
+  
+    try {
+      const token = localStorage.getItem("token");
+      console.log("Token:", token);
+      const res = await axios.post("http://localhost:8080/api/prompt", { prompt }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log("Response from server:", res);
+      const botMessage = {
+        type: "bot",
+        text: res.data.reply || "Sorry, I didn’t get that.",
+        image: avatar
+      };
+  
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { type: "bot", text: "This is a response from Smartlet.", image: avatar },
+        { type: "bot", text: "Something went wrong while contacting Smartlet.", image: avatar },
       ]);
-    }, 1000);
+    }
   };
+
+  useEffect(() => {
+    // Initial greeting
+    if (messages.length === 0) {
+      setMessages([
+        {
+          type: "bot",
+          text: "Hi, I’m Smartlet 👋 What do you want to shop today?",
+          image: avatar,
+        },
+      ]);
+    }
+  }, []);
+  
+  useEffect(() => {
+    // Auto-scroll to bottom when messages update
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

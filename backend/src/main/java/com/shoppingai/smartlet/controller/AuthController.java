@@ -9,18 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api")
 public class AuthController {
     @Autowired
     private AuthService authService;
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest req) {
         return ResponseEntity.ok(authService.login(req.email, req.password));
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/auth/signup")
     public ResponseEntity<AuthResponse> signUp(@RequestBody User user) {
         return ResponseEntity.ok(authService.signUp(user));
     }
