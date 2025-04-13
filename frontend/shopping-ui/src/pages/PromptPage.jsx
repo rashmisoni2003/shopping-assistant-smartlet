@@ -5,46 +5,60 @@ import { FaSignOutAlt } from "react-icons/fa";
 import avatar from "../Pooho.png";
 import "../stars.css";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
 export default function PromptPage() {
-  const [prompt, setPrompt] = useState("");
   const [image, setImage] = useState(null);
-  const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
+  const [prompt, setPrompt] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [sessionId, setSessionId] = useState(() => uuidv4());
+  const [sessions, setSessions] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
 
   const handleImageUpload = (e) => {
     setImage(URL.createObjectURL(e.target.files[0]));
   };
 
   const handleSubmit = async () => {
-    if (!prompt.trim() && !image) return;
-    const userMessage = { type: "user", text: prompt, image };
+    if (!prompt.trim()) return;
+  
+    const userMessage = { type: "user", text: prompt };
     setMessages((prev) => [...prev, userMessage]);
     setPrompt("");
-    setImage(null);
   
     try {
       const token = localStorage.getItem("token");
-      console.log("Token:", token);
-      const res = await axios.post("http://localhost:8080/api/prompt", { prompt }, {
+      const res = await axios.post("http://localhost:8080/api/prompt", {
+        prompt,
+        sessionId
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log("Response from server:", res);
+  
       const botMessage = {
         type: "bot",
-        text: res.data.reply || "Sorry, I didn’t get that.",
+        text: res.data.reply,
         image: avatar
       };
-  
       setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        { type: "bot", text: "Something went wrong while contacting Smartlet.", image: avatar },
-      ]);
+    } catch (err) {
+      setMessages((prev) => [...prev, { type: "bot", text: "Error fetching reply", image: avatar }]);
     }
-  };
+  };  
 
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:8080/sessions", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSessions(res.data);
+    };
+  
+    fetchSessions();
+  }, []);
+  
   useEffect(() => {
     // Initial greeting
     if (messages.length === 0) {
@@ -72,6 +86,46 @@ export default function PromptPage() {
     <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364]">
       <div className="stars" />
       <div className="twinkling" />
+      <div className="absolute top-20 left-4 z-50 bg-white/10 backdrop-blur p-4 rounded-xl space-y-2">
+  <button
+    onClick={() => {
+      const newSession = uuidv4();
+      setSessionId(newSession);
+      setMessages([]);
+      setActiveSession(null);
+    }}
+    className="bg-green-500 px-4 py-2 rounded text-white"
+  >
+    + New Chat
+  </button>
+
+  {sessions.map((s) => (
+    <button
+      key={s.sessionId}
+      className={`block w-full text-left px-3 py-1 rounded ${
+        activeSession === s.sessionId ? "bg-blue-500 text-white" : "bg-white"
+      }`}
+      onClick={async () => {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`http://localhost:8080/sessions/${s.sessionId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const msgs = res.data.messages.map((msg) => ({
+          type: msg.role === "user" ? "user" : "bot",
+          text: msg.content,
+          image: msg.role === "bot" ? avatar : null
+        }));
+
+        setSessionId(s.sessionId);
+        setMessages(msgs);
+        setActiveSession(s.sessionId);
+      }}
+    >
+      {s.title}
+    </button>
+  ))}
+</div>
 
       {/* Logout Button */}
       <button

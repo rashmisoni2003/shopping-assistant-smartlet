@@ -16,18 +16,17 @@ public class PromptController {
     private GroqService groqService;
 
     @PostMapping("/prompt")
-    public ResponseEntity<?> handlePrompt(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> handlePrompt(@RequestBody Map<String, String> request,
+                                          @RequestHeader("Authorization") String authHeader) {
         try {
-
             String prompt = request.get("prompt");
-            System.out.println("Received prompt: " + prompt);  // 🔍 Check what was sent
-            String reply = groqService.getGroqResponse(prompt);
-            System.out.println("Groq reply: " + reply);         // 🔍 Check the actual response
+            String sessionId = request.get("sessionId");
+            String token = authHeader.replace("Bearer ", "");
+
+            String reply = groqService.getGroqResponse(prompt, sessionId, token);
             return ResponseEntity.ok(Map.of("reply", reply));
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to generate response"));
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to generate response"));
         }
     }
 }
