@@ -7,15 +7,14 @@ import com.shoppingai.smartlet.repository.ChatSessionRepository;
 import com.shoppingai.smartlet.repository.MessageRepository;
 import com.shoppingai.smartlet.repository.UserRepository;
 import com.shoppingai.smartlet.security.JwtUtil;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 public class SessionController {
@@ -55,4 +54,22 @@ public class SessionController {
         return ResponseEntity.ok(Map.of("messages", messages));
     }
 
+    @Transactional
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<?> deleteSession(@PathVariable String id,
+                                           @RequestHeader("Authorization") String authHeader) {
+        String email = jwtUtil.getEmailFromToken(authHeader.replace("Bearer ", ""));
+        User user = userRepository.findByEmail(email).orElseThrow();
+
+        ChatSession session = chatSessionRepository.findBySessionIdAndUser(id, user)
+                .orElseThrow();
+
+        // Delete all messages linked to this session first
+        messageRepository.deleteAll(messageRepository.findBySession(session));
+
+        // Then delete the session itself
+        chatSessionRepository.delete(session);
+
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PiPaperPlaneRightFill } from "react-icons/pi";
-import { FaSignOutAlt } from "react-icons/fa";
+import { FaSignOutAlt, FaTrash } from "react-icons/fa";
 import avatar from "../Pooho.png";
 import "../stars.css";
 import axios from "axios";
@@ -22,11 +22,11 @@ export default function PromptPage() {
 
   const handleSubmit = async () => {
     if (!prompt.trim()) return;
-  
+
     const userMessage = { type: "user", text: prompt };
     setMessages((prev) => [...prev, userMessage]);
     setPrompt("");
-  
+
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post("http://localhost:8080/api/prompt", {
@@ -35,7 +35,7 @@ export default function PromptPage() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-  
+
       const botMessage = {
         type: "bot",
         text: res.data.reply,
@@ -45,7 +45,7 @@ export default function PromptPage() {
     } catch (err) {
       setMessages((prev) => [...prev, { type: "bot", text: "Error fetching reply", image: avatar }]);
     }
-  };  
+  };
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -55,12 +55,11 @@ export default function PromptPage() {
       });
       setSessions(res.data);
     };
-  
+
     fetchSessions();
   }, []);
-  
+
   useEffect(() => {
-    // Initial greeting
     if (messages.length === 0) {
       setMessages([
         {
@@ -71,12 +70,6 @@ export default function PromptPage() {
       ]);
     }
   }, []);
-  
-  useEffect(() => {
-    // Auto-scroll to bottom when messages update
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-  
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -86,7 +79,21 @@ export default function PromptPage() {
     <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364]">
       <div className="stars" />
       <div className="twinkling" />
-      <div className="absolute top-20 left-4 z-50 bg-white/10 backdrop-blur p-4 rounded-xl space-y-2">
+
+      {/* Top Bar */}
+      <div className="fixed top-0 left-0 w-full z-50 bg-white/10 backdrop-blur-md flex justify-between items-center px-6 py-4 shadow-lg">
+        <h1 className="text-2xl font-bold text-white">Smartlet 🛍️</h1>
+        <button
+          onClick={() => alert("Logged out!")}
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl shadow-md"
+        >
+          <FaSignOutAlt />
+          Logout
+        </button>
+      </div>
+
+      {/* Left Side - Session Buttons */}
+<div className="absolute top-24 left-4 z-40 bg-white/10 backdrop-blur p-4 rounded-xl space-y-2">
   <button
     onClick={() => {
       const newSession = uuidv4();
@@ -94,15 +101,26 @@ export default function PromptPage() {
       setMessages([]);
       setActiveSession(null);
     }}
-    className="bg-green-500 px-4 py-2 rounded text-white"
+    className="bg-green-500 px-4 py-2 rounded text-white w-full"
   >
     + New Chat
   </button>
 
+  {/* New Shop Manually Button */}
+  <button
+    onClick={() => {
+      window.location.href = "/shop"; // <-- Navigate to the shop page
+    }}
+    className="bg-yellow-500 px-4 py-2 rounded text-white w-full"
+  >
+    🛒 Shop Manually
+  </button>
+
+  {/* List all Sessions */}
   {sessions.map((s) => (
+  <div key={s.sessionId} className="flex items-center gap-2">
     <button
-      key={s.sessionId}
-      className={`block w-full text-left px-3 py-1 rounded ${
+      className={`flex-1 text-left px-3 py-1 rounded ${
         activeSession === s.sessionId ? "bg-blue-500 text-white" : "bg-white"
       }`}
       onClick={async () => {
@@ -124,22 +142,43 @@ export default function PromptPage() {
     >
       {s.title}
     </button>
-  ))}
+
+    {/* 🗑️ Delete Button */}
+    <button
+      onClick={async () => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this session?");
+        if (!confirmDelete) return;
+
+        try {
+          const token = localStorage.getItem("token");
+          await axios.delete(`http://localhost:8080/sessions/${s.sessionId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          // After delete, refresh sessions
+          setSessions((prev) => prev.filter((sess) => sess.sessionId !== s.sessionId));
+          if (activeSession === s.sessionId) {
+            setMessages([]);
+            setActiveSession(null);
+          }
+        } catch (error) {
+          console.error(error);
+          alert("Failed to delete session.");
+        }
+      }}
+      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+    >
+      <FaTrash />
+    </button>
+  </div>
+))}
+
 </div>
 
-      {/* Logout Button */}
-      <button
-        onClick={() => alert("Logged out!")}
-        className="absolute top-4 right-4 z-50 text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl flex items-center gap-2 shadow-md"
-      >
-        <FaSignOutAlt />
-        Logout
-      </button>
-
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col items-center justify-center relative p-2 w-full">
+      <div className="flex-1 flex flex-col items-center justify-center relative p-2 w-full pt-24">
         {/* Chat Messages Area */}
-        <div className="flex flex-col w-full max-w-3xl mx-auto mb-28 overflow-y-auto space-y-4 max-h-[calc(100vh-150px)] scrollbar-thin pr-2">
+        <div className="flex flex-col w-full max-w-3xl mx-auto mb-28 overflow-y-auto space-y-4 max-h-[calc(100vh-180px)] scrollbar-thin pr-2">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -163,15 +202,6 @@ export default function PromptPage() {
                   } text-white`}
                 >
                   {message.text}
-                  {message.type === "user" && message.image && (
-                    <div className="mt-3">
-                      <img
-                        src={message.image}
-                        alt="Uploaded preview"
-                        className="max-h-40 rounded-xl shadow-lg"
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
