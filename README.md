@@ -27,10 +27,10 @@ It serves **online shoppers**, **e-commerce platforms**, and **small businesses*
 `S.V.R.V`
 
 ### Team Members:  
-Sagnik Sahoo
-Vathsa Kondepudi
-Rashmi Soni
-Shashikant
+- Sagnik Sahoo
+- Vathsa Kondepudi
+- Rashmi Soni
+- Shashikant
 
 ### Your Approach:  
 - Chose this problem because real-time, intelligent shopping is still a huge gap for many online buyers.  
